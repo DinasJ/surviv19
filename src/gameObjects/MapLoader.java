@@ -1,19 +1,22 @@
 package gameObjects;
 
+import util.Util;
+
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.lang.reflect.Array;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Scanner;
 
-import util.Util;
 
 public class MapLoader {
 
 	public static Map load(Path path) {
 		ArrayList<Boundary> boundaries = new ArrayList<Boundary>();
+		BoundaryFactory factory = new BoundaryFactory();
 		ArrayList<Item> items = new ArrayList<Item>();
 
 		File file = new File(path.toString());
@@ -23,7 +26,8 @@ public class MapLoader {
 			while (scan.hasNextLine()) {
 				String line = scan.nextLine();
 				if (!line.startsWith("#")) {
-					readLine(line, boundaries, items);
+
+					readLine(line, factory, boundaries, items);
 				}
 
 			}
@@ -35,58 +39,39 @@ public class MapLoader {
 		return new Map(boundaries, items, name);
 	}
 
-	private static void readLine(String line, ArrayList<Boundary> boundaries, ArrayList<Item> items) {
+	private static void readLine(String line, BoundaryFactory factory, ArrayList<Boundary> boundaries, ArrayList<Item> items) {
 
 		int health = 0;
 		Rectangle bounds = null;
 		String name = null;
+		String codeLine = null;
+		codeLine = getCode(line);
 
-		switch (getCode(line)) {
-
-		case "bu":
-			// Boundary
-			bounds = getBounds(line);
-
-			boundaries.add(new Boundary(bounds.x, bounds.y, bounds.width, bounds.height));
-			break;
-		case "bb":
-			// Breakable Boundary
-			bounds = getBounds(line);
-			health = getSpecialAmount(line);
-
-			boundaries.add(new BreakableBoundary(bounds.x, bounds.y, bounds.width, bounds.height, health));
-			break;
-		case "ia":
-			// Ammo Item
+		if (codeLine.equals("ia")||codeLine.equals("ih")){
 			bounds = getHalfBounds(line);
 			health = getSpecialAmount(line);
+		}
+		else{
+			if (codeLine.equals("bb")) {
+				bounds = getBounds(line);
+				health = getSpecialAmount(line);
+			}
+		}
 
-			items.add(new AmmoPack(bounds.x, bounds.y, health));
-			break;
-//		case "ih":
-//			// Health Item
-//			bounds = getHalfBounds(line);
-//			health = getSpecialAmount(line);
-//
-//			items.add(new HealthPack(bounds.x, bounds.y, health));
-//			break;
-//		case "eb":
-//			// Basic Enemy
-//
-//			bounds = getHalfBounds(line);
-//			name = getSpecialStringAmount(line);
-//			Enemy enemy1 = new Enemy(name, new Point(bounds.x, bounds.y));
-//			Game_Main.players.add(enemy1);
-//
-//			break;
-
-		// is -- Shield Item
-		// ii -- Invincible Item
-		// iam -- Mega Ammo Item
-		// ib -- Bomb Item
-
-		default:
-			break;
+		switch (codeLine) {
+			case "ia":
+				items.add(new AmmoPack(bounds.x, bounds.y, health));
+				break;
+			case "eb": // todo
+				break;
+			case "ih": // todo
+				break;
+			default:
+				bounds = getBounds(line);
+				if (codeLine.equals("bb"))
+					health = getSpecialAmount(line);
+				boundaries.add(factory.CreateBoundary(codeLine, bounds, health));
+				break;
 
 		}
 
